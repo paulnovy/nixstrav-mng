@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>nixstrav-mng</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo-dot"></span>
+            <span class="brand-text">nixstrav-mng</span>
+        </div>
+        <nav class="nav">
+            <a href="/">Dashboard</a>
+            <a href="/tags">Tagi</a>
+            <a href="/enroll">Enroll</a>
+            <a href="/events">Zdarzenia</a>
+            <a href="/system">System</a>
+            {% if user and user.role == 'admin' %}
+                <a href="/settings/users">Użytkownicy</a>
+            {% endif %}
+        </nav>
+        <div class="userbox">
+            {% if user %}
+                <span class="user-role">{{ user.role }}</span>
+                <form method="post" action="/logout" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="linklike" type="submit">Wyloguj</button>
+                </form>
+            {% else %}
+                <a href="/login">Zaloguj</a>
+            {% endif %}
+        </div>
+    </header>
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

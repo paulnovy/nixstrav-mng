@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{% if mode == 'create' %}Nowy tag{% else %}Edycja tagu{% endif %}</h1>
+        {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    </div>
+</div>
+
+<form method="post" action="{% if mode == 'create' %}/tags/new{% else %}/tags/{{ tag.epc }}{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-grid">
+        <label>EPC
+            <input type="text" name="epc" value="{{ tag.epc if tag else '' }}" {% if mode != 'create' %}readonly{% endif %} required>
+        </label>
+        <label>Alias
+            <input type="text" name="alias" value="{{ tag.alias if tag else '' }}">
+        </label>
+        <label>Grupa (male_tree/female_fruit)
+            <input type="text" name="alias_group" value="{{ tag.alias_group if tag else '' }}">
+        </label>
+        <label>Pokój
+            <input type="text" name="room_number" value="{{ tag.room_number if tag else '' }}">
+        </label>
+        <label>Status
+            <select name="status_value">
+                <option value="active" {% if not tag or tag.status=='active' %}selected{% endif %}>active</option>
+                <option value="inactive" {% if tag and tag.status=='inactive' %}selected{% endif %}>inactive</option>
+                <option value="lost" {% if tag and tag.status=='lost' %}selected{% endif %}>lost</option>
+            </select>
+        </label>
+    </div>
+    <label>Notatki
+        <textarea name="notes" rows="3">{{ tag.notes if tag else '' }}</textarea>
+    </label>
+    <div class="actions">
+        <button type="submit" class="btn">Zapisz</button>
+        <a class="btn ghost" href="/tags">Anuluj</a>
+    </div>
+</form>
+{% endblock %}

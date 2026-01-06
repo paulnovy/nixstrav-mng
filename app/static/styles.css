@@ -1,0 +1,83 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: #0c1118;
+    color: #e8edf5;
+}
+a { color: #9cd2ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #0f1724;
+    border-bottom: 1px solid #1f2a3a;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.brand-text { letter-spacing: 0.5px; }
+.logo-dot { width: 10px; height: 10px; background: linear-gradient(135deg, #3ed598, #58b4ff); border-radius: 50%; display: inline-block; }
+.nav a { margin-right: 14px; color: #d6e2ff; font-weight: 500; }
+.nav a:last-child { margin-right: 0; }
+.userbox { display: flex; align-items: center; gap: 10px; color: #9fb3d8; }
+.user-role { background: #1f2a3a; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; font-size: 12px; }
+.linklike { background: none; border: none; color: #9cd2ff; cursor: pointer; font-size: 14px; }
+.content { padding: 20px; max-width: 1200px; margin: 0 auto; }
+.page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.muted { color: #6c7a96; }
+.card {
+    background: #0f1724;
+    border: 1px solid #1f2a3a;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+.card-title { font-weight: 600; margin-bottom: 8px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card.wide { grid-column: span 2; }
+table { width: 100%; border-collapse: collapse; background: #0f1724; border-radius: 10px; overflow: hidden; }
+th, td { padding: 10px; text-align: left; border-bottom: 1px solid #1f2a3a; }
+th { background: #111a29; }
+tr:hover { background: #121c2c; }
+code { background: #1a2536; padding: 2px 4px; border-radius: 4px; }
+.btn { background: linear-gradient(135deg, #3ed598, #58b4ff); color: #08101c; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn.ghost { background: transparent; color: #9cd2ff; border: 1px solid #1f2a3a; }
+.actions { display: flex; gap: 10px; align-items: center; }
+input, select, textarea {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid #1f2a3a;
+    background: #0c131f;
+    color: #e8edf5;
+}
+label { display: block; margin-bottom: 10px; font-size: 14px; color: #b8c7e1; }
+textarea { resize: vertical; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.alert { padding: 10px; border-radius: 8px; margin: 10px 0; }
+.alert-error { background: #2a0f18; color: #f9a8d4; border: 1px solid #421526; }
+.badge { padding: 6px 8px; border-radius: 6px; margin: 4px 0; display: inline-block; font-size: 13px; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge-green { background: #123021; color: #7ce7a0; }
+.badge-yellow { background: #2f2a14; color: #f6e05e; }
+.badge-red { background: #301416; color: #f56565; }
+.badge-unknown { background: #1f2432; color: #cbd5e1; }
+.chip { padding: 4px 8px; border-radius: 6px; background: #1f2a3a; color: #d8e1f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.chip.green { background: #123021; color: #7ce7a0; }
+.chip.yellow { background: #2f2a14; color: #f6e05e; }
+.chip.red { background: #301416; color: #f56565; }
+.login-body { display: grid; place-items: center; height: 100vh; background: radial-gradient(circle at 20% 20%, #122038, #0a0f18 40%); }
+.login-card { width: 320px; padding: 20px; background: #0f1724; border: 1px solid #1f2a3a; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+.login-card h1 { margin-top: 0; }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.pagination { margin-top: 10px; display: flex; gap: 6px; }
+.page { padding: 6px 10px; border-radius: 6px; border: 1px solid #1f2a3a; }
+.page.current { background: #1f2a3a; color: #fff; }
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.log { background: #0c131f; border: 1px solid #1f2a3a; padding: 10px; height: 160px; overflow: auto; border-radius: 8px; }
+.badge .muted { color: #93a0b9; font-size: 12px; }

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Tag {{ tag.alias }}</h1>
+        <p class="muted"><code>{{ tag.epc }}</code></p>
+        {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    </div>
+    <div class="actions">
+        {% if user.role != 'viewer' %}
+            <form method="post" action="/tags/{{ tag.epc }}/deactivate" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn ghost" type="submit">Dezaktywuj</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.role != 'viewer' %}
+<form method="post" action="/tags/{{ tag.epc }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-grid">
+        <label>Alias
+            <input type="text" name="alias" value="{{ tag.alias }}">
+        </label>
+        <label>Grupa
+            <input type="text" name="alias_group" value="{{ tag.alias_group or '' }}">
+        </label>
+        <label>Pokój
+            <input type="text" name="room_number" value="{{ tag.room_number or '' }}">
+        </label>
+        <label>Status
+            <select name="status_value">
+                <option value="active" {% if tag.status=='active' %}selected{% endif %}>active</option>
+                <option value="inactive" {% if tag.status=='inactive' %}selected{% endif %}>inactive</option>
+                <option value="lost" {% if tag.status=='lost' %}selected{% endif %}>lost</option>
+            </select>
+        </label>
+    </div>
+    <label>Notatki
+        <textarea name="notes" rows="3">{{ tag.notes or '' }}</textarea>
+    </label>
+    <div class="actions">
+        <button type="submit" class="btn">Zapisz</button>
+    </div>
+</form>
+{% endif %}
+
+<section class="grid">
+    <div class="card">
+        <div class="card-title">Ostatnie zdarzenia tego tagu</div>
+        <ul>
+            {% for e in tag_events %}
+                <li>{{ e.received_at }} – {{ e.reader_id }} <span class="chip">{{ e.reason }}</span></li>
+            {% else %}
+                <li class="muted">Brak</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="card">
+        <div class="card-title">Ostatnie zdarzenia czytnika</div>
+        <ul>
+            {% for e in reader_events %}
+                <li>{{ e.received_at }} – {{ e.tag }} <span class="chip">{{ e.reason }}</span></li>
+            {% else %}
+                <li class="muted">Brak</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+{% endblock %}

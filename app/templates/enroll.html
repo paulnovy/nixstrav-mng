@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Enroll tagu</h1>
+        <p class="muted">Tryb {{ cf601_mode }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">Skan (keyboard wedge)</div>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/enroll">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-grid">
+            <label>EPC
+                <input id="epc-input" type="text" name="epc" required autocomplete="off">
+            </label>
+            <label>Grupa
+                <select name="alias_group">
+                    <option value="male_tree">male_tree (drzewa)</option>
+                    <option value="female_fruit">female_fruit (owoce)</option>
+                </select>
+            </label>
+            <label>Pokój
+                <input type="text" name="room_number">
+            </label>
+        </div>
+        <label>Notatki
+            <textarea name="notes" rows="2"></textarea>
+        </label>
+        <button type="submit" class="btn">Dodaj do whitelisty</button>
+    </form>
+</div>
+
+{% if cf601_mode == 'service' %}
+<div class="card">
+    <div class="card-title">CF601 (service mode)</div>
+    <div class="button-row">
+        <button type="button" class="btn ghost" onclick="loadPorts()">Pobierz porty</button>
+        <select id="ports-select"></select>
+        <button type="button" class="btn" onclick="openDevice()">Otwórz</button>
+        <button type="button" class="btn ghost" onclick="closeDevice()">Zamknij</button>
+    </div>
+    <div class="button-row">
+        <button type="button" class="btn" onclick="startInventory()">Start</button>
+        <button type="button" class="btn ghost" onclick="stopInventory()">Stop</button>
+        <button type="button" class="btn" onclick="refreshTags()">Pobierz tagi</button>
+    </div>
+    <pre id="cf601-log" class="log"></pre>
+</div>
+{% endif %}
+
+<script>
+const csrfToken = "{{ csrf_token }}";
+const logBox = document.getElementById('cf601-log');
+const portsSelect = document.getElementById('ports-select');
+
+function appendLog(msg) {
+    if (!logBox) return;
+    const ts = new Date().toISOString();
+    logBox.textContent = `[${ts}] ${msg}\n` + logBox.textContent;
+}
+
+async function callCf601(endpoint, payload={}, requireCsrf=false) {
+    const headers = {"Content-Type": "application/json"};
+    if (requireCsrf) headers["X-CSRF-Token"] = csrfToken;
+    const res = await fetch(`/api/v1/cf601/${endpoint}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+        appendLog(`Błąd ${endpoint}: ${res.status}`);
+        return null;
+    }
+    return await res.json();
+}
+
+async function loadPorts() {
+    const data = await callCf601("getPorts");
+    if (!data) return;
+    portsSelect.innerHTML = "";
+    (data.ports || data || []).forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p;
+        portsSelect.appendChild(opt);
+    });
+    appendLog("Porty: " + JSON.stringify(data));
+}
+async function openDevice() {
+    const port = portsSelect.value;
+    const data = await callCf601("OpenDevice", {port}, true);
+    appendLog("OpenDevice: " + JSON.stringify(data));
+}
+async function closeDevice() {
+    const data = await callCf601("CloseDevice", {}, true);
+    appendLog("CloseDevice: " + JSON.stringify(data));
+}
+async function startInventory() {
+    const data = await callCf601("StartCounting", {}, true);
+    appendLog("Start: " + JSON.stringify(data));
+}
+async function stopInventory() {
+    const data = await callCf601("InventoryStop", {}, true);
+    appendLog("Stop: " + JSON.stringify(data));
+}
+async function refreshTags() {
+    const data = await callCf601("GetTagInfo");
+    appendLog("TagInfo: " + JSON.stringify(data));
+}
+document.getElementById('epc-input')?.focus();
+</script>
+{% endblock %}

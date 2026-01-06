@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Tagi</h1>
+        <p class="muted">Rejestr whitelisty ({{ tags|length }} pozycji)</p>
+    </div>
+    <div class="actions">
+        {% if user and user.role != 'viewer' %}
+            <a class="btn" href="/tags/new">Dodaj tag</a>
+        {% endif %}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Alias</th>
+            <th>EPC</th>
+            <th>Grupa</th>
+            <th>Pokój</th>
+            <th>Status</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tag in tags %}
+            <tr>
+                <td>{{ tag.alias }}</td>
+                <td><code>{{ tag.epc }}</code></td>
+                <td>{{ tag.alias_group or '—' }}</td>
+                <td>{{ tag.room_number or '—' }}</td>
+                <td><span class="chip">{{ tag.status }}</span></td>
+                <td><a href="/tags/{{ tag.epc }}">Szczegóły</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="muted">Brak tagów</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Użytkownicy</h1>
+        {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    </div>
+</div>
+
+<table>
+    <thead><tr><th>Login</th><th>Rola</th><th>Aktywny</th><th>Ostatnie logowanie</th></tr></thead>
+    <tbody>
+        {% for u in users %}
+            <tr>
+                <td>{{ u.username }}</td>
+                <td>{{ u.role }}</td>
+                <td>{{ 'tak' if u.is_active else 'nie' }}</td>
+                <td>{{ u.last_login_at or '—' }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="muted">Brak</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Nowy użytkownik</h3>
+<form method="post" action="/settings/users/new">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-grid">
+        <label>Login
+            <input type="text" name="username" required>
+        </label>
+        <label>Hasło
+            <input type="password" name="password" required>
+        </label>
+        <label>Rola
+            <select name="role">
+                <option value="viewer">viewer</option>
+                <option value="operator">operator</option>
+                <option value="admin">admin</option>
+            </select>
+        </label>
+    </div>
+    <button type="submit" class="btn">Dodaj</button>
+</form>
+{% endblock %}

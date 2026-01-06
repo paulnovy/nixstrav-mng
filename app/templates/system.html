@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>System</h1>
+        <p class="muted">Heurystyka ostatnich zdarzeń</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">Usługi</div>
+    <div class="badge-row">
+        {% for s in services %}
+            <div class="badge {{ 'badge-green' if s.active else 'badge-red' }}">{{ s.name }} <span class="muted">{{ s.raw }}</span></div>
+        {% endfor %}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr><th>Czytnik</th><th>Ostatnie zdarzenie</th><th>Fired</th><th>Stan</th></tr>
+    </thead>
+    <tbody>
+        {% for r in readers %}
+            <tr>
+                <td>{{ r.reader_id }}</td>
+                <td>{{ r.last_event or '—' }}</td>
+                <td>{{ r.fired_count }}/{{ r.total }}</td>
+                <td><span class="chip {{ r.state }}">{{ r.state }}</span></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="muted">Brak danych</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

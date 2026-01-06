@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid">
+    <div class="card">
+        <div class="card-title">Czytniki (heurystyka)</div>
+        <div class="badge-row">
+            {% for r in readers %}
+                <div class="badge badge-{{ r.state|default('unknown') }}">
+                    {{ r.reader_id }} <span class="muted">{{ r.last_event or '—' }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">Nieznane tagi</div>
+        <table>
+            <thead><tr><th>EPC</th><th>Ile</th><th>Ostatnio</th></tr></thead>
+            <tbody>
+            {% for t in unknown %}
+                <tr><td>{{ t.tag }}</td><td>{{ t.count }}</td><td>{{ t.last_seen }}</td></tr>
+            {% else %}
+                <tr><td colspan="3" class="muted">Brak</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card wide">
+        <div class="card-title">Ostatnie zdarzenia</div>
+        <table>
+            <thead><tr><th>Reader</th><th>Tag</th><th>Czas</th><th>Reason</th><th>Fired</th></tr></thead>
+            <tbody>
+            {% for e in events %}
+                <tr>
+                    <td>{{ e.reader_id }}</td>
+                    <td>{{ e.tag }}</td>
+                    <td>{{ e.received_at }}</td>
+                    <td><span class="chip">{{ e.reason }}</span></td>
+                    <td>{{ e.fired }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="muted">Brak zdarzeń</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-title">Problemy</div>
+        <ul>
+            {% for p in problems %}
+                <li>{{ p.reader_id }} → {{ p.tag }} <span class="chip">{{ p.reason }}</span> {{ p.received_at }}</li>
+            {% else %}
+                <li class="muted">Brak</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+{% endblock %}

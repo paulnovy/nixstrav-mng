@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Zdarzenia</h1>
+        <p class="muted">Łącznie {{ total }}</p>
+    </div>
+    <div class="actions">
+        <a class="btn ghost" href="/api/v1/events?export=csv">Eksport CSV</a>
+    </div>
+</div>
+
+<form method="get" class="filter-grid">
+    <label>Od
+        <input type="text" name="from_ts" value="{{ filters.from_ts or '' }}" placeholder="2024-01-01T00:00:00">
+    </label>
+    <label>Do
+        <input type="text" name="to_ts" value="{{ filters.to_ts or '' }}" placeholder="2024-01-02T23:59:59">
+    </label>
+    <label>Czytnik
+        <input type="text" name="reader_id" value="{{ filters.reader_id or '' }}">
+    </label>
+    <label>Tag
+        <input type="text" name="tag" value="{{ filters.tag or '' }}">
+    </label>
+    <label>Reason
+        <input type="text" name="reason" value="{{ filters.reason or '' }}">
+    </label>
+    <div class="actions">
+        <button type="submit" class="btn">Filtruj</button>
+    </div>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Reader</th>
+            <th>Tag</th>
+            <th>Czas</th>
+            <th>Reason</th>
+            <th>Fired</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in events %}
+            <tr>
+                <td>{{ e.id }}</td>
+                <td>{{ e.reader_id }}</td>
+                <td>{{ e.tag }}</td>
+                <td>{{ e.received_at }}</td>
+                <td><span class="chip">{{ e.reason }}</span></td>
+                <td>{{ e.fired }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="muted">Brak</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% set page_size = 50 %}
+{% set pages = (total // page_size) + (1 if total % page_size else 0) %}
+{% if pages > 1 %}
+<div class="pagination">
+    {% for p in range(1, pages+1) %}
+        {% if p == page %}
+            <span class="page current">{{ p }}</span>
+        {% else %}
+            <a class="page" href="?page={{ p }}&reader_id={{ filters.reader_id or '' }}&reason={{ filters.reason or '' }}&tag={{ filters.tag or '' }}&from_ts={{ filters.from_ts or '' }}&to_ts={{ filters.to_ts or '' }}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

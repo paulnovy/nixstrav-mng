@@ -17,7 +17,11 @@ Optional: copy .env.example to .env and adjust paths/secrets.
 ## Run
 make run
 # or
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+## Notes
+- SessionMiddleware comes from Starlette and requires itsdangerous.
+- Start the server from repo root (/workspace/nixstrav-mng).
 
 ## Tests
 - Run from repo root (important to avoid pytest import mismatch).

@@ -7,3 +7,6 @@
 - Add .env.example with app configuration variables.
 - Add GitHub Actions CI to run pytest -q on PRs.
 - Add AGENTS.md with the main Codex agent prompt.
+- Fix SessionMiddleware import to use Starlette; add itsdangerous dependency.
+- Add smoke test for importing app.main.
+- Update DEV_SETUP run command and notes.

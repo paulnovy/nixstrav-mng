@@ -10,3 +10,7 @@
 - Fix SessionMiddleware import to use Starlette; add itsdangerous dependency.
 - Add smoke test for importing app.main.
 - Update DEV_SETUP run command and notes.
+- Fix CSRF middleware ordering so SessionMiddleware runs before session access.
+- Guard CSRF middleware when session scope is not yet available.
+- Fix missing template globals for settings in enroll view.
+- Add test to ensure Jinja templates expose settings.

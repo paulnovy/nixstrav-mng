@@ -8,7 +8,8 @@ FastAPI + Jinja (server-rendered), SQLite, bez zewnętrznych assetów.
 - Rejestr tagów (whitelist) z aliasami, grupą (male_tree/female_fruit), pokojem, notatkami, statusem; synchronizacja z `known_tags.json` zapisywana atomowo.
 - Enrollment tagu z czytnika CF601:
   - Tryb A: keyboard wedge (pole input).
-  - Tryb B: integracja z usługą `cf601d` (HTTP kompatybilny z vendorem; start/stop, porty, live tag info).
+  - Tryb B: lokalny agent `cf601d` (HTTP kompatybilny z vendorem; browser -> localhost).
+  - Tryb C: Web Serial / WebUSB (eksperymentalny, tylko wybrane przeglądarki).
 - Podgląd zdarzeń z `events.db` (paginacja, filtry, eksport CSV/JSON).
 - Dashboard + heurystyka stanu czytników (last_event per reader, błędy).
 - Prosty heartbeat endpoint `/api/v1/system/heartbeat` pod V1 health-model.
@@ -38,8 +39,9 @@ requirements.txt
 - `NIXSTRAV_KNOWN_TAGS_JSON` – ścieżka do whitelisty `known_tags.json`.
 - `NIXSTRAV_CONFIG_JSON` – ścieżka do `config.json` (UI do edycji w V1).
 - `SESSION_SECRET` – losowy sekret do podpisywania sesji.
-- `CF601_MODE` – `keyboard` lub `service`.
+- `CF601_MODE` – `keyboard`, `service` lub `webserial`.
 - `CF601D_URL` – baza URL do lokalnej usługi cf601d (np. `http://127.0.0.1:8888`).
+- `READER_WARN_SEC`, `READER_OFFLINE_SEC` – progi heurystyki readerow (sekundy).
 
 Opcje bezpieczeństwa (podklucz `SECURITY__...`):
 - `SECURITY__SESSION_SECURE` (`true`/`false`) – ustawia flagę `Secure` na cookie.
@@ -83,8 +85,10 @@ Usługa nasłuchuje na `:8000` – za reverse proxy (Nginx + TLS self-signed) wy
 
 ## CF601
 - Tryb `keyboard`: wejście /enroll -> pole EPC z fokusem, skan z klawiatury.
-- Tryb `service`: panel w /enroll z przyciskami do usług `cf601d` (`/getPorts`, `/OpenDevice`, `/StartCounting`, `/GetTagInfo`, `/InventoryStop`, `/CloseDevice`).  
-  API proxy dostępne pod `/api/v1/cf601/...` (wymaga roli operatora + CSRF dla operacji mutujących).
+- Tryb `service`: panel w /enroll z przyciskami do usług `cf601d` (`/getPorts`, `/OpenDevice`, `/StartCounting`, `/GetTagInfo`, `/InventoryStop`, `/CloseDevice`).
+  Połączenie jest bezpośrednio z przeglądarki do `CF601D_URL` (nie przez serwer).
+  Uwaga na mixed-content przy HTTPS i wymagany CORS.
+- Tryb `webserial`: tylko wybrane przeglądarki (Chromium) i secure context (HTTPS/localhost).
 
 ## CLI
 ```

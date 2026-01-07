@@ -6,7 +6,9 @@
         <div class="badge-row">
             {% for r in readers %}
                 <div class="badge badge-{{ r.state|default('unknown') }}">
-                    {{ r.reader_id }} <span class="muted">{{ r.last_event or '—' }}</span>
+                    {{ r.reader_id }}
+                    <span class="muted">{{ r.status or '—' }}</span>
+                    <span class="muted">{{ r.last_event or '—' }}</span>
                 </div>
             {% endfor %}
         </div>

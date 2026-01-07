@@ -10,9 +10,10 @@ from typing import Any, Dict
 from sqlalchemy.orm import Session
 
 from ..models import Tag
+from .epc import normalize_epc
 
 
-def load_known_tags(path: Path) -> Dict[str, Any]:
+def read_known_tags_safe(path: Path) -> Dict[str, Any]:
     if not path.exists():
         return {}
     lock_path = Path(str(path) + ".lock")
@@ -22,11 +23,13 @@ def load_known_tags(path: Path) -> Dict[str, Any]:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
+        except json.JSONDecodeError:
+            return {}
         finally:
             fcntl.flock(lock_file, fcntl.LOCK_UN)
 
 
-def atomic_write_known_tags(path: Path, data: Dict[str, Any]) -> None:
+def write_known_tags_atomic(path: Path, data: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lock_path = Path(str(path) + ".lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -38,9 +41,24 @@ def atomic_write_known_tags(path: Path, data: Dict[str, Any]) -> None:
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
                 json.dump(data, tmp_file, indent=2, ensure_ascii=False)
+                tmp_file.flush()
+                os.fsync(tmp_file.fileno())
             os.replace(tmp_path, path)
+            dir_fd = os.open(path.parent, os.O_DIRECTORY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
         finally:
             fcntl.flock(lock_file, fcntl.LOCK_UN)
+
+
+def load_known_tags(path: Path) -> Dict[str, Any]:
+    return read_known_tags_safe(path)
+
+
+def atomic_write_known_tags(path: Path, data: Dict[str, Any]) -> None:
+    write_known_tags_atomic(path, data)
 
 
 def sync_json_to_db(session: Session, path: Path) -> None:
@@ -49,16 +67,19 @@ def sync_json_to_db(session: Session, path: Path) -> None:
     """
     if session.query(Tag).count() > 0:
         return
-    data = load_known_tags(path)
+    data = read_known_tags_safe(path)
     if not isinstance(data, dict):
         return
     for epc, meta in data.items():
+        canonical = normalize_epc(epc)
+        if not canonical:
+            continue
         meta = meta or {}
         if not isinstance(meta, dict):
             meta = {}
-        alias = meta.get("alias") or meta.get("owner") or epc
+        alias = meta.get("alias") or meta.get("owner") or canonical
         tag = Tag(
-            epc=epc,
+            epc=canonical,
             alias=alias,
             alias_group=meta.get("alias_group"),
             room_number=meta.get("room_number"),
@@ -83,4 +104,4 @@ def persist_db_to_json(session: Session, path: Path) -> None:
             "notes": tag.notes,
             "status": tag.status,
         }
-    atomic_write_known_tags(path, payload)
+    write_known_tags_atomic(path, payload)

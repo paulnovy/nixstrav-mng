@@ -3,43 +3,100 @@
 <div class="page-head">
     <div>
         <h1>Enroll tagu</h1>
-        <p class="muted">Tryb {{ cf601_mode }}</p>
+        <p class="muted">CF601 jest po stronie komputera operatora. Tryb A (keyboard wedge) dziala zawsze.</p>
     </div>
 </div>
 
 <div class="card">
+    <div class="card-title">Tryby i kompatybilnosc</div>
+    <div class="mode-grid">
+        <div class="mode-item">
+            <div class="mode-name">Tryb A: keyboard wedge</div>
+            <div class="mode-meta">
+                <span class="mode-pill {% if cf601_mode == 'keyboard' %}active{% endif %}">
+                    {% if cf601_mode == 'keyboard' %}aktywny{% else %}opcjonalny{% endif %}
+                </span>
+                <span class="mode-pill">dziala wszedzie</span>
+            </div>
+            <p class="muted">Skanuj EPC w pole ponizej. Brak dodatkowego oprogramowania.</p>
+        </div>
+        <div class="mode-item">
+            <div class="mode-name">Tryb B: lokalny agent cf601d</div>
+            <div class="mode-meta">
+                <span class="mode-pill {% if cf601_mode == 'service' %}active{% endif %}">
+                    {% if cf601_mode == 'service' %}aktywny{% else %}opcjonalny{% endif %}
+                </span>
+                <span class="mode-pill">localhost</span>
+            </div>
+            <p class="muted">Przegladarka laczy sie bezposrednio do cf601d na komputerze operatora.</p>
+        </div>
+        <div class="mode-item">
+            <div class="mode-name">Tryb C: Web Serial / WebUSB</div>
+            <div class="mode-meta">
+                <span class="mode-pill {% if cf601_mode == 'webserial' %}active{% endif %}">
+                    {% if cf601_mode == 'webserial' %}aktywny{% else %}opcjonalny{% endif %}
+                </span>
+                <span class="mode-pill" id="serial-support">WebSerial: ?</span>
+                <span class="mode-pill" id="usb-support">WebUSB: ?</span>
+            </div>
+            <p class="muted">Eksperymentalny tryb. Wymaga HTTPS/localhost i zgodnej przegladarki.</p>
+        </div>
+    </div>
+    <div id="compat-warnings" class="alert alert-warn" style="display:none;"></div>
+</div>
+
+<div class="card enroll-card">
     <div class="card-title">Skan (keyboard wedge)</div>
     {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-    <form method="post" action="/enroll">
+    <form method="post" action="/enroll" id="enroll-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="epc" id="epc-hidden" required>
+        <div class="scan-box">
+            <label for="scan-input">Zeskanuj tag</label>
+            <input id="scan-input" class="scan-input" type="text" autocomplete="off" placeholder="Przyloz tag i zeskanuj EPC">
+            <div class="scan-status">
+                <span id="epc-status" class="status-pill pending">Czekam na skan</span>
+                <span class="status-pill" id="scan-mode">Tryb: keyboard</span>
+            </div>
+        </div>
         <div class="form-grid">
-            <label>EPC
-                <input id="epc-input" type="text" name="epc" required autocomplete="off">
+            <label>Wykryty EPC
+                <input id="epc-display" type="text" readonly>
             </label>
             <label>Grupa
-                <select name="alias_group">
+                <select id="alias-group" name="alias_group">
                     <option value="male_tree">male_tree (drzewa)</option>
                     <option value="female_fruit">female_fruit (owoce)</option>
                 </select>
             </label>
-            <label>Pokój
-                <input type="text" name="room_number">
+            <label>Alias
+                <div class="inline-field">
+                    <input id="alias-input" type="text" name="alias" placeholder="Auto lub recznie">
+                    <button type="button" class="btn ghost" id="alias-generate">Wygeneruj alias</button>
+                </div>
+            </label>
+            <label>Pokoj
+                <input id="room-number" type="text" name="room_number">
             </label>
         </div>
         <label>Notatki
-            <textarea name="notes" rows="2"></textarea>
+            <textarea id="notes" name="notes" rows="2"></textarea>
         </label>
-        <button type="submit" class="btn">Dodaj do whitelisty</button>
+        <div class="actions">
+            <button type="submit" class="btn" id="enroll-submit">Dodaj do whitelisty</button>
+            <a class="btn ghost" id="existing-link" href="#" style="display:none;">Przejdz do tagu</a>
+        </div>
     </form>
 </div>
 
 {% if cf601_mode == 'service' %}
 <div class="card">
-    <div class="card-title">CF601 (service mode)</div>
+    <div class="card-title">CF601 (lokalny agent cf601d)</div>
+    <div class="muted">Polaczenie bezposrednio z przegladarki do <code>{{ settings.cf601d_url }}</code>.</div>
     <div class="button-row">
         <button type="button" class="btn ghost" onclick="loadPorts()">Pobierz porty</button>
         <select id="ports-select"></select>
-        <button type="button" class="btn" onclick="openDevice()">Otwórz</button>
+        <button type="button" class="btn" onclick="openDevice()">Otworz</button>
         <button type="button" class="btn ghost" onclick="closeDevice()">Zamknij</button>
     </div>
     <div class="button-row">
@@ -51,10 +108,187 @@
 </div>
 {% endif %}
 
+{% if cf601_mode == 'webserial' %}
+<div class="card">
+    <div class="card-title">CF601 (Web Serial / WebUSB)</div>
+    <div class="muted">Eksperymentalny tryb. Wymaga secure context (HTTPS/localhost).</div>
+    <div class="button-row">
+        <button type="button" class="btn" id="serial-connect">Polacz</button>
+        <button type="button" class="btn ghost" id="serial-disconnect">Rozlacz</button>
+    </div>
+    <pre id="serial-log" class="log"></pre>
+</div>
+{% endif %}
+
 <script>
-const csrfToken = "{{ csrf_token }}";
-const logBox = document.getElementById('cf601-log');
-const portsSelect = document.getElementById('ports-select');
+const cf601Mode = {{ cf601_mode | tojson }};
+const cf601dUrl = {{ settings.cf601d_url | tojson }};
+const scanInput = document.getElementById("scan-input");
+const epcHidden = document.getElementById("epc-hidden");
+const epcDisplay = document.getElementById("epc-display");
+const epcStatus = document.getElementById("epc-status");
+const enrollSubmit = document.getElementById("enroll-submit");
+const existingLink = document.getElementById("existing-link");
+const aliasInput = document.getElementById("alias-input");
+const aliasGroup = document.getElementById("alias-group");
+const roomNumber = document.getElementById("room-number");
+const notesField = document.getElementById("notes");
+const aliasGenerate = document.getElementById("alias-generate");
+const compatWarnings = document.getElementById("compat-warnings");
+let lastEpc = "";
+let lastSeenAt = 0;
+let scanTimer = null;
+
+function normalizeEpc(raw) {
+    const trimmed = (raw || "").trim();
+    if (!trimmed) return "";
+    const matches = trimmed.match(/[0-9a-fA-F]{8,}/g) || [];
+    if (!matches.length) return "";
+    let longest = matches[0];
+    for (const token of matches) {
+        if (token.length > longest.length) {
+            longest = token;
+        }
+    }
+    return longest.toUpperCase();
+}
+
+function setStatus(text, level) {
+    if (!epcStatus) return;
+    epcStatus.textContent = text;
+    epcStatus.className = `status-pill ${level}`;
+}
+
+function resetFormForNew() {
+    existingLink.style.display = "none";
+    enrollSubmit.disabled = false;
+    aliasInput.value = "";
+    roomNumber.value = "";
+    notesField.value = "";
+}
+
+function applyExisting(tag) {
+    existingLink.href = `/tags/${encodeURIComponent(tag.epc)}`;
+    existingLink.style.display = "inline-flex";
+    enrollSubmit.disabled = true;
+    if (tag.alias_group) aliasGroup.value = tag.alias_group;
+    if (tag.alias) aliasInput.value = tag.alias;
+    if (tag.room_number) roomNumber.value = tag.room_number;
+    if (tag.notes) notesField.value = tag.notes;
+}
+
+async function checkExisting(epc) {
+    try {
+        const res = await fetch(`/api/v1/tags/${encodeURIComponent(epc)}`);
+        if (res.ok) {
+            const tag = await res.json();
+            setStatus("Tag juz istnieje", "warn");
+            applyExisting(tag);
+            return;
+        }
+        if (res.status === 404) {
+            setStatus("Nowy tag", "ok");
+            resetFormForNew();
+            return;
+        }
+        setStatus("Nie mozna sprawdzic tagu", "warn");
+        enrollSubmit.disabled = false;
+    } catch (err) {
+        setStatus("Brak polaczenia z API", "warn");
+        enrollSubmit.disabled = false;
+    }
+}
+
+function handleScan(raw) {
+    const epc = normalizeEpc(raw);
+    if (!epc) {
+        setStatus("Nie rozpoznano EPC", "warn");
+        return;
+    }
+    const now = Date.now();
+    if (epc === lastEpc && now - lastSeenAt < 500) {
+        return;
+    }
+    lastEpc = epc;
+    lastSeenAt = now;
+    epcHidden.value = epc;
+    epcDisplay.value = epc;
+    checkExisting(epc);
+    scanInput.value = "";
+    scanInput.focus();
+}
+
+function scheduleScan() {
+    if (scanTimer) window.clearTimeout(scanTimer);
+    scanTimer = window.setTimeout(() => handleScan(scanInput.value), 140);
+}
+
+scanInput?.addEventListener("input", scheduleScan);
+scanInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        handleScan(scanInput.value);
+    }
+});
+scanInput?.focus();
+
+document.getElementById("enroll-form")?.addEventListener("submit", (event) => {
+    if (!epcHidden.value) {
+        handleScan(scanInput.value);
+    }
+    if (!epcHidden.value) {
+        event.preventDefault();
+        setStatus("Brak EPC do zapisu", "warn");
+    }
+});
+
+aliasGenerate?.addEventListener("click", async () => {
+    try {
+        const group = aliasGroup.value || "male_tree";
+        const res = await fetch(`/api/v1/tags/alias-suggest?group=${encodeURIComponent(group)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.alias) aliasInput.value = data.alias;
+    } catch (err) {
+        setStatus("Nie mozna wygenerowac aliasu", "warn");
+    }
+});
+
+const serialSupport = "serial" in navigator;
+const usbSupport = "usb" in navigator;
+const serialBadge = document.getElementById("serial-support");
+const usbBadge = document.getElementById("usb-support");
+if (serialBadge) {
+    serialBadge.textContent = serialSupport ? "WebSerial: OK" : "WebSerial: brak";
+}
+if (usbBadge) {
+    usbBadge.textContent = usbSupport ? "WebUSB: OK" : "WebUSB: brak";
+}
+
+const warnings = [];
+if (cf601Mode === "webserial" && !window.isSecureContext) {
+    warnings.push("Tryb WebSerial wymaga HTTPS lub localhost (secure context).");
+}
+if (cf601Mode === "service" && cf601dUrl) {
+    try {
+        const targetUrl = new URL(cf601dUrl, window.location.href);
+        if (window.location.protocol === "https:" && targetUrl.protocol === "http:") {
+            warnings.push("Mixed content: panel jest na HTTPS, a cf601d na HTTP.");
+        }
+        if (targetUrl.origin !== window.location.origin) {
+            warnings.push("CORS: cf601d musi zezwolic na origin panelu.");
+        }
+    } catch (err) {
+        warnings.push("Nieprawidlowy CF601D_URL.");
+    }
+}
+if (warnings.length && compatWarnings) {
+    compatWarnings.style.display = "block";
+    compatWarnings.innerHTML = warnings.map(w => `<div>${w}</div>`).join("");
+}
+
+const logBox = document.getElementById("cf601-log");
+const portsSelect = document.getElementById("ports-select");
 
 function appendLog(msg) {
     if (!logBox) return;
@@ -62,24 +296,30 @@ function appendLog(msg) {
     logBox.textContent = `[${ts}] ${msg}\n` + logBox.textContent;
 }
 
-async function callCf601(endpoint, payload={}, requireCsrf=false) {
-    const headers = {"Content-Type": "application/json"};
-    if (requireCsrf) headers["X-CSRF-Token"] = csrfToken;
-    const res = await fetch(`/api/v1/cf601/${endpoint}`, {
+function cf601Url(endpoint) {
+    return cf601dUrl.replace(/\/$/, "") + endpoint;
+}
+
+async function callCf601(endpoint, payload = {}) {
+    if (!cf601dUrl) {
+        appendLog("Brak CF601D_URL");
+        return null;
+    }
+    const res = await fetch(cf601Url(endpoint), {
         method: "POST",
-        headers,
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload)
     });
     if (!res.ok) {
-        appendLog(`Błąd ${endpoint}: ${res.status}`);
+        appendLog(`Blad ${endpoint}: ${res.status}`);
         return null;
     }
     return await res.json();
 }
 
 async function loadPorts() {
-    const data = await callCf601("getPorts");
-    if (!data) return;
+    const data = await callCf601("/getPorts");
+    if (!data || !portsSelect) return;
     portsSelect.innerHTML = "";
     (data.ports || data || []).forEach(p => {
         const opt = document.createElement("option");
@@ -90,26 +330,98 @@ async function loadPorts() {
     appendLog("Porty: " + JSON.stringify(data));
 }
 async function openDevice() {
-    const port = portsSelect.value;
-    const data = await callCf601("OpenDevice", {port}, true);
+    const port = portsSelect?.value;
+    const data = await callCf601("/OpenDevice", {port});
     appendLog("OpenDevice: " + JSON.stringify(data));
 }
 async function closeDevice() {
-    const data = await callCf601("CloseDevice", {}, true);
+    const data = await callCf601("/CloseDevice", {});
     appendLog("CloseDevice: " + JSON.stringify(data));
 }
 async function startInventory() {
-    const data = await callCf601("StartCounting", {}, true);
+    const data = await callCf601("/StartCounting", {});
     appendLog("Start: " + JSON.stringify(data));
 }
 async function stopInventory() {
-    const data = await callCf601("InventoryStop", {}, true);
+    const data = await callCf601("/InventoryStop", {});
     appendLog("Stop: " + JSON.stringify(data));
 }
 async function refreshTags() {
-    const data = await callCf601("GetTagInfo");
+    const data = await callCf601("/GetTagInfo", {});
     appendLog("TagInfo: " + JSON.stringify(data));
 }
-document.getElementById('epc-input')?.focus();
+
+let serialPort = null;
+let serialReader = null;
+let serialBuffer = "";
+let serialActive = false;
+const serialLog = document.getElementById("serial-log");
+
+function appendSerial(msg) {
+    if (!serialLog) return;
+    const ts = new Date().toISOString();
+    serialLog.textContent = `[${ts}] ${msg}\n` + serialLog.textContent;
+}
+
+async function readSerialLoop() {
+    try {
+        while (serialActive && serialReader) {
+            const {value, done} = await serialReader.read();
+            if (done) break;
+            if (value) {
+                serialBuffer += value;
+                if (serialBuffer.length > 512) {
+                    serialBuffer = serialBuffer.slice(-256);
+                }
+                if (serialBuffer.match(/[\r\n]/)) {
+                    const parts = serialBuffer.split(/[\r\n]+/);
+                    serialBuffer = parts.pop() || "";
+                    parts.forEach(part => handleScan(part));
+                }
+            }
+        }
+    } catch (err) {
+        appendSerial("Blad odczytu: " + err);
+    }
+}
+
+async function connectSerial() {
+    if (!serialSupport) {
+        appendSerial("Brak wsparcia WebSerial.");
+        return;
+    }
+    try {
+        serialPort = await navigator.serial.requestPort();
+        await serialPort.open({baudRate: 115200});
+        const decoder = new TextDecoderStream();
+        serialPort.readable.pipeTo(decoder.writable);
+        serialReader = decoder.readable.getReader();
+        serialActive = true;
+        appendSerial("Polaczono.");
+        readSerialLoop();
+    } catch (err) {
+        appendSerial("Nie mozna polaczyc: " + err);
+    }
+}
+
+async function disconnectSerial() {
+    try {
+        serialActive = false;
+        if (serialReader) {
+            await serialReader.cancel();
+            serialReader = null;
+        }
+        if (serialPort) {
+            await serialPort.close();
+            serialPort = null;
+        }
+        appendSerial("Rozlaczono.");
+    } catch (err) {
+        appendSerial("Blad rozlaczenia: " + err);
+    }
+}
+
+document.getElementById("serial-connect")?.addEventListener("click", connectSerial);
+document.getElementById("serial-disconnect")?.addEventListener("click", disconnectSerial);
 </script>
 {% endblock %}

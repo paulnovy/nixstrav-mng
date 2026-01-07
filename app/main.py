@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +19,20 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="nixstrav-mng", version="0.1.0")
 
+async def add_csrf_token(request: Request, call_next):
+    # Ensure csrf token exists for templates
+    if "session" not in request.scope:
+        return await call_next(request)
+    if not request.session.get("csrf_token"):
+        import secrets
+
+        request.session["csrf_token"] = secrets.token_urlsafe(32)
+    response = await call_next(request)
+    return response
+
+
+# Middleware order: TrustedHost -> CORS -> Session -> CSRF
+app.add_middleware(BaseHTTPMiddleware, dispatch=add_csrf_token)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
@@ -25,7 +40,6 @@ app.add_middleware(
     same_site=settings.security.session_samesite,
     https_only=settings.security.session_secure,
 )
-
 # LAN-only, but keep a minimal CORS safe baseline
 app.add_middleware(
     CORSMiddleware,
@@ -59,17 +73,6 @@ def on_startup() -> None:
         ensure_admin_exists(session)
     finally:
         session.close()
-
-
-@app.middleware("http")
-async def add_csrf_token(request: Request, call_next):
-    # Ensure csrf token exists for templates
-    if not request.session.get("csrf_token"):
-        import secrets
-
-        request.session["csrf_token"] = secrets.token_urlsafe(32)
-    response = await call_next(request)
-    return response
 
 
 app.include_router(views.router)

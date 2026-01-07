@@ -30,12 +30,14 @@ class Settings(BaseSettings):
     security: SecuritySettings = SecuritySettings()
 
     # CF601
-    cf601_mode: Literal["keyboard", "service"] = "keyboard"
+    cf601_mode: Literal["keyboard", "service", "webserial"] = "keyboard"
     cf601d_url: str = "http://127.0.0.1:8888"
 
     # Misc
     debug: bool = False
     timezone: str = "UTC"
+    reader_warn_sec: int = 90
+    reader_offline_sec: int = 300
 
 
 @lru_cache()

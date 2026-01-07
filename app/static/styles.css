@@ -61,6 +61,7 @@ textarea { resize: vertical; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .alert { padding: 10px; border-radius: 8px; margin: 10px 0; }
 .alert-error { background: #2a0f18; color: #f9a8d4; border: 1px solid #421526; }
+.alert-warn { background: #2a1f0f; color: #f6d365; border: 1px solid #3a2a14; }
 .badge { padding: 6px 8px; border-radius: 6px; margin: 4px 0; display: inline-block; font-size: 13px; }
 .badge-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .badge-green { background: #123021; color: #7ce7a0; }
@@ -81,3 +82,18 @@ textarea { resize: vertical; }
 .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .log { background: #0c131f; border: 1px solid #1f2a3a; padding: 10px; height: 160px; overflow: auto; border-radius: 8px; }
 .badge .muted { color: #93a0b9; font-size: 12px; }
+.mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.mode-item { padding: 10px; border: 1px dashed #1f2a3a; border-radius: 8px; background: #0c131f; }
+.mode-name { font-weight: 600; margin-bottom: 6px; }
+.mode-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.mode-pill { padding: 4px 8px; border-radius: 999px; background: #1f2a3a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.mode-pill.active { background: #123021; color: #7ce7a0; }
+.scan-box { margin-bottom: 10px; }
+.scan-input { font-size: 20px; padding: 12px; border: 1px solid #2a3a50; background: #0a101a; }
+.scan-status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.status-pill { padding: 6px 10px; border-radius: 999px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; background: #1f2a3a; color: #d8e1f0; }
+.status-pill.ok { background: #123021; color: #7ce7a0; }
+.status-pill.warn { background: #2f2a14; color: #f6e05e; }
+.status-pill.pending { background: #1f2432; color: #cbd5e1; }
+.inline-field { display: flex; gap: 8px; align-items: center; }
+.inline-field input { flex: 1 1 auto; }

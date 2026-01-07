@@ -43,7 +43,6 @@ async def services_status(request: Request, user: User = Depends(_current_viewer
     services = [
         check_service_status("rfid-server.service"),
         check_service_status("nixstrav-mng.service"),
-        check_service_status("cf601d.service"),
     ]
     return services
 

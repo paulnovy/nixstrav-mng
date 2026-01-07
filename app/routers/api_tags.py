@@ -11,6 +11,7 @@ from ..models import Tag, User, UserRole
 from ..security import csrf_protect, require_user, require_role
 from ..services import audit
 from ..services.alias_generator import generate_alias
+from ..services.epc import normalize_epc
 from ..services.events import last_seen_for_tags
 from ..services.known_tags import persist_db_to_json
 
@@ -78,6 +79,17 @@ async def list_tags(
     return response
 
 
+@router.get("/alias-suggest")
+async def suggest_alias(
+    group: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(_current_operator),
+):
+    existing_aliases = [a for (a,) in db.query(Tag.alias).all()]
+    alias = generate_alias(group or "male_tree", existing_aliases)
+    return {"alias": alias}
+
+
 @router.post("", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 async def create_tag(
     payload: TagCreate,
@@ -86,20 +98,22 @@ async def create_tag(
     user: User = Depends(_current_operator),
     _: None = Depends(csrf_protect),
 ):
+    canonical_epc = normalize_epc(payload.epc)
+    if not canonical_epc:
+        raise HTTPException(status_code=400, detail="Invalid EPC")
     existing_aliases = [a for (a,) in db.query(Tag.alias).all()]
-    alias = payload.alias or generate_alias(
-        payload.alias_group or "male_tree", existing_aliases
-    )
+    alias_group_value = payload.alias_group or "male_tree"
+    alias = payload.alias or generate_alias(alias_group_value, existing_aliases)
     if alias in existing_aliases:
         raise HTTPException(status_code=400, detail="Alias already exists")
 
-    if db.get(Tag, payload.epc):
+    if db.get(Tag, canonical_epc):
         raise HTTPException(status_code=400, detail="Tag already exists")
 
     tag = Tag(
-        epc=payload.epc.strip(),
+        epc=canonical_epc,
         alias=alias,
-        alias_group=payload.alias_group,
+        alias_group=payload.alias_group or None,
         room_number=payload.room_number,
         notes=payload.notes,
         status=payload.status,
@@ -126,7 +140,8 @@ async def get_tag(
     db: Session = Depends(get_db),
     user: User = Depends(_current_viewer),
 ):
-    tag = db.get(Tag, epc)
+    canonical_epc = normalize_epc(epc) or epc
+    tag = db.get(Tag, canonical_epc)
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     events_db = str(
@@ -153,7 +168,8 @@ async def update_tag(
     user: User = Depends(_current_operator),
     _: None = Depends(csrf_protect),
 ):
-    tag = db.get(Tag, epc)
+    canonical_epc = normalize_epc(epc) or epc
+    tag = db.get(Tag, canonical_epc)
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     before = {
@@ -171,7 +187,7 @@ async def update_tag(
             raise HTTPException(status_code=400, detail="Alias already exists")
         tag.alias = payload.alias
     if payload.alias_group is not None:
-        tag.alias_group = payload.alias_group
+        tag.alias_group = payload.alias_group or None
     if payload.room_number is not None:
         tag.room_number = payload.room_number
     if payload.notes is not None:
@@ -209,7 +225,8 @@ async def delete_tag(
     user: User = Depends(_current_operator),
     _: None = Depends(csrf_protect),
 ):
-    tag = db.get(Tag, epc)
+    canonical_epc = normalize_epc(epc) or epc
+    tag = db.get(Tag, canonical_epc)
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     before = {

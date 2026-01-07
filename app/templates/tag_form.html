@@ -16,8 +16,12 @@
         <label>Alias
             <input type="text" name="alias" value="{{ tag.alias if tag else '' }}">
         </label>
-        <label>Grupa (male_tree/female_fruit)
-            <input type="text" name="alias_group" value="{{ tag.alias_group if tag else '' }}">
+        <label>Grupa
+            <select name="alias_group">
+                <option value="">-</option>
+                <option value="male_tree" {% if tag and tag.alias_group=='male_tree' %}selected{% endif %}>male_tree (drzewa)</option>
+                <option value="female_fruit" {% if tag and tag.alias_group=='female_fruit' %}selected{% endif %}>female_fruit (owoce)</option>
+            </select>
         </label>
         <label>Pokój
             <input type="text" name="room_number" value="{{ tag.room_number if tag else '' }}">

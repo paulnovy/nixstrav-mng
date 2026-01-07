@@ -11,3 +11,9 @@ def test_atomic_write_known_tags(tmp_path):
     loaded = load_known_tags(path)
     assert loaded["E1"]["alias"] == "B"
     assert loaded["E2"]["alias"] == "C"
+
+
+def test_load_known_tags_handles_invalid_json(tmp_path):
+    path = tmp_path / "known_tags.json"
+    path.write_text("{bad json", encoding="utf-8")
+    assert load_known_tags(path) == {}

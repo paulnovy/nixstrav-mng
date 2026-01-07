@@ -2,6 +2,7 @@ import subprocess
 from datetime import datetime
 from typing import Any, Dict, List
 
+from ..config import settings
 from .events import last_events_per_reader, recent_errors
 
 
@@ -23,22 +24,29 @@ def check_service_status(service_name: str) -> Dict[str, Any]:
 def reader_status_heuristic(events_db: str) -> List[Dict[str, Any]]:
     readers = last_events_per_reader(events_db)
     now = datetime.utcnow()
+    warn_sec = settings.reader_warn_sec
+    offline_sec = settings.reader_offline_sec
     for r in readers:
         last = r.get("last_event")
         if last:
             try:
                 dt = datetime.fromisoformat(last)
                 delta = (now - dt).total_seconds()
-                if delta < 90:
+                if delta < warn_sec:
                     r["state"] = "green"
-                elif delta < 300:
+                    r["status"] = "OK"
+                elif delta < offline_sec:
                     r["state"] = "yellow"
+                    r["status"] = "WARN"
                 else:
                     r["state"] = "red"
+                    r["status"] = "OFFLINE"
             except Exception:
                 r["state"] = "unknown"
+                r["status"] = "UNKNOWN"
         else:
             r["state"] = "unknown"
+            r["status"] = "UNKNOWN"
     return readers
 
 

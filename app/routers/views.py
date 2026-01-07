@@ -20,6 +20,7 @@ from ..security import (
 )
 from ..services import audit
 from ..services.alias_generator import generate_alias
+from ..services.epc import normalize_epc
 from ..services.events import (
     EventFilters,
     events_for_reader,
@@ -193,8 +194,23 @@ async def tags_create(
     user: User = Depends(current_operator),
     _: None = Depends(csrf_protect),
 ):
+    canonical_epc = normalize_epc(epc)
+    if not canonical_epc:
+        return templates.TemplateResponse(
+            "tag_form.html",
+            {
+                "request": request,
+                "tag": None,
+                "mode": "create",
+                "user": user,
+                "error": "Nieprawidłowy EPC",
+                "csrf_token": get_or_create_csrf(request),
+            },
+            status_code=400,
+        )
     existing_aliases = [a for (a,) in db.query(Tag.alias).all()]
-    use_alias = alias or generate_alias(alias_group or "male_tree", existing_aliases)
+    alias_group_value = alias_group or "male_tree"
+    use_alias = alias or generate_alias(alias_group_value, existing_aliases)
     if use_alias in existing_aliases:
         error = "Alias już istnieje"
         return templates.TemplateResponse(
@@ -209,7 +225,7 @@ async def tags_create(
             },
             status_code=400,
         )
-    if db.get(Tag, epc):
+    if db.get(Tag, canonical_epc):
         error = "Tag już istnieje"
         return templates.TemplateResponse(
             "tag_form.html",
@@ -224,9 +240,9 @@ async def tags_create(
             status_code=400,
         )
     tag = Tag(
-        epc=epc.strip(),
+        epc=canonical_epc,
         alias=use_alias,
-        alias_group=alias_group,
+        alias_group=alias_group or None,
         room_number=room_number,
         notes=notes,
         status=status_value,
@@ -322,7 +338,7 @@ async def tag_update(
                 status_code=400,
             )
         tag.alias = alias
-    tag.alias_group = alias_group
+    tag.alias_group = alias_group or None
     tag.room_number = room_number
     tag.notes = notes
     tag.status = status_value
@@ -395,6 +411,7 @@ async def enroll_view(
 async def enroll_submit(
     request: Request,
     epc: str = Form(...),
+    alias: Optional[str] = Form(None),
     alias_group: Optional[str] = Form("male_tree"),
     room_number: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
@@ -402,9 +419,35 @@ async def enroll_submit(
     user: User = Depends(current_operator),
     _: None = Depends(csrf_protect),
 ):
+    canonical_epc = normalize_epc(epc)
+    if not canonical_epc:
+        return templates.TemplateResponse(
+            "enroll.html",
+            {
+                "request": request,
+                "user": user,
+                "cf601_mode": settings.cf601_mode,
+                "error": "Nieprawidłowy EPC",
+                "csrf_token": get_or_create_csrf(request),
+            },
+            status_code=400,
+        )
     existing_aliases = [a for (a,) in db.query(Tag.alias).all()]
-    alias = generate_alias(alias_group or "male_tree", existing_aliases)
-    if db.get(Tag, epc):
+    alias_group_value = alias_group or "male_tree"
+    use_alias = alias or generate_alias(alias_group_value, existing_aliases)
+    if use_alias in existing_aliases:
+        return templates.TemplateResponse(
+            "enroll.html",
+            {
+                "request": request,
+                "user": user,
+                "cf601_mode": settings.cf601_mode,
+                "error": "Alias już istnieje",
+                "csrf_token": get_or_create_csrf(request),
+            },
+            status_code=400,
+        )
+    if db.get(Tag, canonical_epc):
         error = "Tag już istnieje"
         return templates.TemplateResponse(
             "enroll.html",
@@ -418,9 +461,9 @@ async def enroll_submit(
             status_code=400,
         )
     tag = Tag(
-        epc=epc.strip(),
-        alias=alias,
-        alias_group=alias_group,
+        epc=canonical_epc,
+        alias=use_alias,
+        alias_group=alias_group_value,
         room_number=room_number,
         notes=notes,
         status="active",
@@ -491,7 +534,6 @@ async def system_view(
     services = [
         check_service_status("rfid-server.service"),
         check_service_status("nixstrav-mng.service"),
-        check_service_status("cf601d.service"),
     ]
     return templates.TemplateResponse(
         "system.html",

@@ -36,6 +36,7 @@ from ..services.users import authenticate_user, create_user, get_user_by_usernam
 router = APIRouter()
 
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+templates.env.globals["settings"] = settings
 
 
 async def current_user(request: Request, db: Session = Depends(get_db)) -> User:

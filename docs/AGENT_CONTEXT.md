@@ -3,7 +3,8 @@
 ## Current State
 - Repo root: /workspace/nixstrav-mng (contains .git). There is also /workspace as a parent.
 - Stack: FastAPI + Jinja, SQLite; no external assets.
-- Enrollment UI at /enroll supports keyboard wedge, cf601d (localhost), and WebSerial (optional).
+- Enrollment UI at /enroll supports keyboard wedge, local reader bridge (localhost), and WebSerial (optional).
+- Added Windows reader bridge under tools/reader-bridge (bridge.py + install.bat/run.bat).
 - known_tags.json sync uses atomic write + .lock.
 - events.db is accessed read-only via sqlite mode=ro.
 - CI: GitHub Actions runs pytest -q on pull requests.

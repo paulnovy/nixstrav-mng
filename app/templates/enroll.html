@@ -91,7 +91,7 @@
 
 {% if cf601_mode == 'service' %}
 <div class="card">
-    <div class="card-title">CF601 (lokalny agent cf601d)</div>
+    <div class="card-title">UHF Reader Bridge (lokalny agent)</div>
     <div class="muted">Polaczenie bezposrednio z przegladarki do <code>{{ settings.cf601d_url }}</code>.</div>
     <div class="button-row">
         <button type="button" class="btn ghost" onclick="loadPorts()">Pobierz porty</button>
@@ -135,9 +135,12 @@ const roomNumber = document.getElementById("room-number");
 const notesField = document.getElementById("notes");
 const aliasGenerate = document.getElementById("alias-generate");
 const compatWarnings = document.getElementById("compat-warnings");
+const scanModeLabel = document.getElementById("scan-mode");
 let lastEpc = "";
 let lastSeenAt = 0;
 let scanTimer = null;
+let pollTimer = null;
+let healthTimer = null;
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -264,6 +267,9 @@ if (serialBadge) {
 if (usbBadge) {
     usbBadge.textContent = usbSupport ? "WebUSB: OK" : "WebUSB: brak";
 }
+if (scanModeLabel) {
+    scanModeLabel.textContent = `Tryb: ${cf601Mode}`;
+}
 
 const warnings = [];
 if (cf601Mode === "webserial" && !window.isSecureContext) {
@@ -318,10 +324,10 @@ async function callCf601(endpoint, payload = {}) {
 }
 
 async function loadPorts() {
-    const data = await callCf601("/getPorts");
+    const data = await callCf601("/ports");
     if (!data || !portsSelect) return;
     portsSelect.innerHTML = "";
-    (data.ports || data || []).forEach(p => {
+    (data.ports || []).forEach(p => {
         const opt = document.createElement("option");
         opt.value = p;
         opt.textContent = p;
@@ -331,24 +337,74 @@ async function loadPorts() {
 }
 async function openDevice() {
     const port = portsSelect?.value;
-    const data = await callCf601("/OpenDevice", {port});
-    appendLog("OpenDevice: " + JSON.stringify(data));
+    const data = await callCf601("/open", {port, baudrate: 115200});
+    appendLog("Open: " + JSON.stringify(data));
 }
 async function closeDevice() {
-    const data = await callCf601("/CloseDevice", {});
-    appendLog("CloseDevice: " + JSON.stringify(data));
+    const data = await callCf601("/close", {});
+    appendLog("Close: " + JSON.stringify(data));
 }
 async function startInventory() {
-    const data = await callCf601("/StartCounting", {});
+    const data = await callCf601("/start", {});
     appendLog("Start: " + JSON.stringify(data));
 }
 async function stopInventory() {
-    const data = await callCf601("/InventoryStop", {});
+    const data = await callCf601("/stop", {});
     appendLog("Stop: " + JSON.stringify(data));
 }
 async function refreshTags() {
-    const data = await callCf601("/GetTagInfo", {});
-    appendLog("TagInfo: " + JSON.stringify(data));
+    const data = await callCf601("/tags", {});
+    if (!data) return;
+    appendLog("Tags: " + JSON.stringify(data));
+    if (data && data.tags && data.tags.length) {
+        handleScan(data.tags[0].epc);
+    }
+}
+
+async function checkBridgeHealth() {
+    try {
+        const res = await fetch(cf601Url("/health"));
+        if (!res.ok) {
+            appendLog(`Health: ${res.status}`);
+            return false;
+        }
+        const json = await res.json();
+        return !!json.ok;
+    } catch (err) {
+        appendLog("Health: brak polaczenia");
+        return false;
+    }
+}
+
+function startAutoPoll() {
+    if (pollTimer) return;
+    pollTimer = window.setInterval(() => {
+        refreshTags();
+    }, 600);
+    appendLog("Auto‑poll: ON");
+}
+
+function stopAutoPoll() {
+    if (pollTimer) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+        appendLog("Auto‑poll: OFF");
+    }
+}
+
+async function initServiceMode() {
+    if (!cf601dUrl) return;
+    const ok = await checkBridgeHealth();
+    if (ok) {
+        startAutoPoll();
+    }
+    if (!healthTimer) {
+        healthTimer = window.setInterval(async () => {
+            const okNow = await checkBridgeHealth();
+            if (okNow && !pollTimer) startAutoPoll();
+            if (!okNow && pollTimer) stopAutoPoll();
+        }, 3000);
+    }
 }
 
 let serialPort = null;
@@ -423,5 +479,9 @@ async function disconnectSerial() {
 
 document.getElementById("serial-connect")?.addEventListener("click", connectSerial);
 document.getElementById("serial-disconnect")?.addEventListener("click", disconnectSerial);
+
+if (cf601Mode === "service") {
+    initServiceMode();
+}
 </script>
 {% endblock %}

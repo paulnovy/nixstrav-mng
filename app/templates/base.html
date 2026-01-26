@@ -43,16 +43,15 @@
         const body = document.body;
         const toggle = document.getElementById('theme-toggle');
         const stored = localStorage.getItem('theme');
-        if (stored) {
-            root.dataset.theme = stored;
-            body.dataset.theme = stored;
-        }
+        const initial = stored || 'light';
+        root.dataset.theme = initial;
+        body.dataset.theme = initial;
         function setIcon() {
-            const theme = root.dataset.theme || 'dark';
+            const theme = root.dataset.theme || 'light';
             toggle.textContent = theme === 'light' ? '☾' : '☀︎';
         }
         toggle?.addEventListener('click', () => {
-            const current = root.dataset.theme || 'dark';
+            const current = root.dataset.theme || 'light';
             const next = current === 'light' ? 'dark' : 'light';
             root.dataset.theme = next;
             body.dataset.theme = next;

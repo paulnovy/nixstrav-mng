@@ -141,6 +141,7 @@ let lastSeenAt = 0;
 let scanTimer = null;
 let pollTimer = null;
 let healthTimer = null;
+const duplicateWindowMs = 2500;
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -209,7 +210,7 @@ function handleScan(raw) {
         return;
     }
     const now = Date.now();
-    if (epc === lastEpc && now - lastSeenAt < 500) {
+    if (epc === lastEpc && now - lastSeenAt < duplicateWindowMs) {
         return;
     }
     lastEpc = epc;

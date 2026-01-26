@@ -283,7 +283,30 @@ scanInput?.addEventListener("keydown", (event) => {
         handleScan(scanInput.value);
     }
 });
-scanInput?.focus();
+
+// Utrzymuj focus na polu skanu (keyboard wedge)
+function ensureScanFocus() {
+    if (!scanInput) return;
+    if (document.activeElement !== scanInput) {
+        scanInput.focus();
+    }
+}
+
+document.addEventListener("keydown", (event) => {
+    // Jeśli focus jest gdzie indziej, przekieruj do pola skanu
+    if (!scanInput) return;
+    if (document.activeElement !== scanInput && !(event.ctrlKey || event.metaKey || event.altKey)) {
+        scanInput.focus();
+    }
+});
+
+scanInput?.addEventListener("blur", () => {
+    setTimeout(ensureScanFocus, 50);
+});
+
+window.addEventListener("focus", ensureScanFocus);
+setInterval(ensureScanFocus, 1000);
+ensureScanFocus();
 
 document.getElementById("enroll-form")?.addEventListener("submit", (event) => {
     if (!epcHidden.value) {

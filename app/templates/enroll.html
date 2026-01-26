@@ -2,7 +2,7 @@
 {% block content %}
 <div class="page-head">
     <div>
-        <h1>Enroll tagu</h1>
+        <h1>Dodaj tag</h1>
         <p class="muted">CF601 jest po stronie komputera operatora. Tryb A (keyboard wedge) dziala zawsze.</p>
     </div>
 </div>
@@ -141,7 +141,8 @@ let lastSeenAt = 0;
 let scanTimer = null;
 let pollTimer = null;
 let healthTimer = null;
-const duplicateWindowMs = 2500;
+const duplicateWindowMs = 6000;
+let coolDownUntil = 0;
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -210,11 +211,15 @@ function handleScan(raw) {
         return;
     }
     const now = Date.now();
+    if (now < coolDownUntil) {
+        return;
+    }
     if (epc === lastEpc && now - lastSeenAt < duplicateWindowMs) {
         return;
     }
     lastEpc = epc;
     lastSeenAt = now;
+    coolDownUntil = now + 1500;
     epcHidden.value = epc;
     epcDisplay.value = epc;
     checkExisting(epc);

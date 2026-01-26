@@ -35,6 +35,9 @@ class Settings(BaseSettings):
 
     # Misc
     debug: bool = False
+
+    # Dev toggles
+    dev_insecure_cookies: bool = False
     timezone: str = "UTC"
     reader_warn_sec: int = 90
     reader_offline_sec: int = 300

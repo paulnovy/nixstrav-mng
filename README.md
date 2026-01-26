@@ -1,5 +1,12 @@
 # nixstrav-mng
 
+## Dev (LAN)
+Jeśli odpalasz na HTTP w sieci lokalnej, ustaw w środowisku:
+```
+DEV_INSECURE_COOKIES=true
+```
+Bez tego cookies sesji są `Secure` i logowanie z HTTP kończy się błędem CSRF.
+
 Zarządzanie i obserwowalność systemu **nixstrav** (RFID perimeter guard) w LAN.  
 FastAPI + Jinja (server-rendered), SQLite, bez zewnętrznych assetów.
 

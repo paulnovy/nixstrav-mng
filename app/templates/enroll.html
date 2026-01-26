@@ -143,6 +143,9 @@ let pollTimer = null;
 let healthTimer = null;
 const duplicateWindowMs = 6000;
 let coolDownUntil = 0;
+const confirmWindowMs = 3000;
+const confirmRequired = 3;
+const confirmationCounts = new Map();
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -156,6 +159,19 @@ function normalizeEpc(raw) {
         }
     }
     return longest.toUpperCase();
+}
+
+function isValidEpcLength(epc) {
+    return epc.length === 24;
+}
+
+function trackConfirmation(epc) {
+    const now = Date.now();
+    const bucket = confirmationCounts.get(epc) || [];
+    const recent = bucket.filter(ts => now - ts <= confirmWindowMs);
+    recent.push(now);
+    confirmationCounts.set(epc, recent);
+    return recent.length;
 }
 
 function setStatus(text, level) {
@@ -214,9 +230,22 @@ function handleScan(raw) {
     if (now < coolDownUntil) {
         return;
     }
+
+    if (!isValidEpcLength(epc)) {
+        setStatus("EPC ma nieprawidlowa dlugosc", "warn");
+        return;
+    }
+
     if (epc === lastEpc && now - lastSeenAt < duplicateWindowMs) {
         return;
     }
+
+    const confirmations = trackConfirmation(epc);
+    if (confirmations < confirmRequired) {
+        setStatus(`Potwierdzenia: ${confirmations}/${confirmRequired}`, "pending");
+        return;
+    }
+
     lastEpc = epc;
     lastSeenAt = now;
     coolDownUntil = now + 1500;

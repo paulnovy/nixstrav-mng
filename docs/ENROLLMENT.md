@@ -1,26 +1,27 @@
-# Enrollment (CF601)
+# Dodawanie tagów (keyboard‑wedge)
 
 ## Summary
-Default is Mode A (keyboard-wedge). It must always work in any browser. Modes B/C are optional and must fallback to Mode A.
+Domyślny jest Mode A (keyboard‑wedge) i **musi działać zawsze**. Tryby B/C to tylko fallback.
 
-## Mode A - keyboard wedge (default)
-- works in every browser
-- UI uses large input, autofocus, debounce
-- EPC normalization: pick longest hex token, uppercase (see app/services/epc.py)
-- flow: scan -> detect existing/new -> alias -> save
+## Mode A — keyboard‑wedge (domyślny)
+- działa w każdej przeglądarce
+- akceptujemy EPC po **3 potwierdzeniach w 3s**
+- EPC musi mieć **24 znaki hex** (96‑bit, zgodne z nixstrav)
+- skan przetwarzany **po Enter**
+- focus jest utrzymywany na polu skanu
+- flow: scan → detect existing/new → alias → save
 
-## Mode B - cf601d localhost service (optional)
-- browser calls CF601D_URL (default http://127.0.0.1:8888) directly from operator PC
-- server never proxies USB
-- risks: CORS and mixed content when panel is HTTPS and cf601d is HTTP
-- UI must warn
+## Mode B — lokalny bridge (awaryjny)
+- browser woła `CF601D_URL` (domyślnie `http://127.0.0.1:8888`) bezpośrednio z PC operatora
+- server nigdy nie proxy‑uje USB
+- endpointy: `/ports`, `/open`, `/start`, `/tags`, `/stop`, `/close`
+- ryzyka: CORS + mixed content gdy panel jest na HTTPS, a bridge na HTTP
 
-## Mode C - WebSerial/WebUSB (optional)
-- only supported in some browsers (Chromium)
-- requires secure context (HTTPS or localhost)
-- feature detect and show fallback
+## Mode C — WebSerial/WebUSB (awaryjny)
+- tylko wybrane przeglądarki (Chromium)
+- wymaga secure context (HTTPS lub localhost)
 
 ## Troubleshooting
-- No scan: ensure input focus, reader set to keyboard-wedge, and EPC is present
-- Mode B: check cf601d running, CORS headers allow panel origin, and protocol matches
-- Mode C: check secure context and browser support; otherwise fallback to Mode A
+- Brak skanu: sprawdź focus pola, tryb keyboard‑wedge i czytnik wysyła Enter
+- Mode B: czy bridge działa, CORS i protokoły zgodne
+- Mode C: secure context + wsparcie przeglądarki

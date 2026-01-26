@@ -3,6 +3,11 @@
 ## Reader Bridge (Windows) — tryb awaryjny
 **Domyślnie używamy keyboard‑wedge (HID)**, bez instalacji. Bridge jest potrzebny tylko gdy czytnik nie potrafi emulować klawiatury.
 
+W trybie keyboard‑wedge:
+- EPC akceptujemy po **3 potwierdzeniach w 3s**
+- długość EPC: **24 znaki hex**
+- skan po Enter
+
 ### Instalacja (nietechniczna)
 1. Skopiuj folder `tools/reader-bridge` na komputer operatora.
 2. Skopiuj `UHFPrimeReader.dll` z SDK do folderu bridge.

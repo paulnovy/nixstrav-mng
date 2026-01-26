@@ -30,12 +30,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+session_https_only = settings.security.session_secure and not settings.dev_insecure_cookies
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
     session_cookie=settings.security.session_cookie,
     same_site=settings.security.session_samesite,
-    https_only=settings.security.session_secure,
+    https_only=session_https_only,
 )
 
 static_dir = Path(__file__).parent / "static"

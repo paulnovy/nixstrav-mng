@@ -26,3 +26,8 @@
 - Server never touches operator USB; hardware access stays in browser or local agent.
 - LAN only access; block public ingress.
 - events.db is external input; treat as read-only and potentially incomplete.
+
+## Enrollment rules
+- Keyboard‑wedge is default.
+- EPC accepted after **3 confirmations in 3s** and must be **24 hex**.
+- Skan akceptowany po Enter, fokus utrzymywany na polu.

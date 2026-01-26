@@ -1,14 +1,21 @@
 # nixstrav-mng
 
+## Dev (LAN)
+Jeśli odpalasz na HTTP w sieci lokalnej, ustaw w środowisku:
+```
+DEV_INSECURE_COOKIES=true
+```
+Bez tego cookies sesji są `Secure` i logowanie z HTTP kończy się błędem CSRF.
+
 Zarządzanie i obserwowalność systemu **nixstrav** (RFID perimeter guard) w LAN.  
 FastAPI + Jinja (server-rendered), SQLite, bez zewnętrznych assetów.
 
 ## Funkcje (MVP)
 - Logowanie z rolami (admin / operator / viewer), sesje cookie, rate-limit, CSRF, audit log.
 - Rejestr tagów (whitelist) z aliasami, grupą (male_tree/female_fruit), pokojem, notatkami, statusem; synchronizacja z `known_tags.json` zapisywana atomowo.
-- Enrollment tagu z czytnika CF601:
-  - Tryb A: keyboard wedge (pole input).
-  - Tryb B: lokalny agent `cf601d` (HTTP kompatybilny z vendorem; browser -> localhost).
+- Dodawanie tagu z czytnika (UI „Dodaj”):
+  - Tryb A: **keyboard‑wedge** (domyślny, bez instalacji).
+  - Tryb B: lokalny bridge (awaryjnie, browser -> localhost).
   - Tryb C: Web Serial / WebUSB (eksperymentalny, tylko wybrane przeglądarki).
 - Podgląd zdarzeń z `events.db` (paginacja, filtry, eksport CSV/JSON).
 - Dashboard + heurystyka stanu czytników (last_event per reader, błędy).
@@ -53,9 +60,10 @@ Opcje bezpieczeństwa (podklucz `SECURITY__...`):
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+export DEV_INSECURE_COOKIES=true
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-UI: `https://localhost:8000/` (zalecany TLS nawet w LAN).  
+UI: `http://localhost:8000/` (HTTP w LAN).  
 Domyślny admin tworzony przy starcie jeśli DB pusta: `admin/admin` – zmień od razu.
 
 ## Pierwszy start na serwerze (marianserwer)
@@ -83,12 +91,16 @@ Usługa nasłuchuje na `:8000` – za reverse proxy (Nginx + TLS self-signed) wy
 - Aplikacja importuje istniejący `known_tags.json` przy pierwszym starcie (jeśli DB pusta).
 - Każda zmiana tagu zapisuje DB i generuje nowy `known_tags.json` atomowo (`tmp + rename` + blokada plikowa `.lock`).
 
-## CF601
-- Tryb `keyboard`: wejście /enroll -> pole EPC z fokusem, skan z klawiatury.
-- Tryb `service`: panel w /enroll z przyciskami do usług `cf601d` (`/getPorts`, `/OpenDevice`, `/StartCounting`, `/GetTagInfo`, `/InventoryStop`, `/CloseDevice`).
+## Czytnik (keyboard‑wedge)
+- Domyślnie używamy **keyboard‑wedge**: skan działa jak wpisanie tekstu z klawiatury.
+- UI „Dodaj” wymaga **3 potwierdzeń w 3s** i **EPC = 24 znaki hex** (zgodne z nixstrav).
+- Skan jest akceptowany **po Enter**, a focus jest utrzymywany na polu skanu.
+
+## Tryby awaryjne
+- `CF601_MODE=service`: UI pokazuje panel do lokalnego bridge (endpointy: `/ports`, `/open`, `/start`, `/tags`, `/stop`, `/close`).
   Połączenie jest bezpośrednio z przeglądarki do `CF601D_URL` (nie przez serwer).
-  Uwaga na mixed-content przy HTTPS i wymagany CORS.
-- Tryb `webserial`: tylko wybrane przeglądarki (Chromium) i secure context (HTTPS/localhost).
+  Uwaga na mixed‑content przy HTTPS i wymagany CORS.
+- `CF601_MODE=webserial`: tylko Chromium i secure context (HTTPS/localhost).
 
 ## CLI
 ```

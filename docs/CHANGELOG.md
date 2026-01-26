@@ -1,16 +1,10 @@
 # Changelog
 
 ## Unreleased
-- Add docs skeleton (PRD, architecture, enrollment, security, dev setup, operations, agent context, ADR).
-- Add pytest.ini to force testpaths=tests.
-- Add Makefile with run/test targets.
-- Add .env.example with app configuration variables.
-- Add GitHub Actions CI to run pytest -q on PRs.
-- Add AGENTS.md with the main Codex agent prompt.
-- Fix SessionMiddleware import to use Starlette; add itsdangerous dependency.
-- Add smoke test for importing app.main.
-- Update DEV_SETUP run command and notes.
-- Fix CSRF middleware ordering so SessionMiddleware runs before session access.
-- Guard CSRF middleware when session scope is not yet available.
-- Fix missing template globals for settings in enroll view.
-- Add test to ensure Jinja templates expose settings.
+- Default keyboard‑wedge flow: Enter‑only scan, focus lock, EPC 24‑hex validation.
+- Require 3 confirmations within 3s before accepting EPC.
+- Hide bridge/WebSerial UI unless enabled via CF601_MODE.
+- Add optional Windows reader bridge (tools/reader-bridge).
+- Add DEV_INSECURE_COOKIES for LAN HTTP dev.
+- Add light theme + theme toggle; refreshed styling.
+- Update docs (PRD/ARCHITECTURE/ENROLLMENT/OPERATIONS/DEV_SETUP/AGENT_CONTEXT).

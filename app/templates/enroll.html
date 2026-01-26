@@ -2,7 +2,7 @@
 {% block content %}
 <div class="page-head">
     <div>
-        <h1>Enroll tagu</h1>
+        <h1>Dodaj tag</h1>
         <p class="muted">CF601 jest po stronie komputera operatora. Tryb A (keyboard wedge) dziala zawsze.</p>
     </div>
 </div>
@@ -141,6 +141,13 @@ let lastSeenAt = 0;
 let scanTimer = null;
 let pollTimer = null;
 let healthTimer = null;
+const duplicateWindowMs = 6000;
+let coolDownUntil = 0;
+const confirmWindowMs = 3000;
+const confirmRequired = 3;
+const confirmationCounts = new Map();
+let scanLockUntil = 0;
+const useEnterOnly = true; // keyboard-wedge: reaguj tylko na Enter
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -154,6 +161,19 @@ function normalizeEpc(raw) {
         }
     }
     return longest.toUpperCase();
+}
+
+function isValidEpcLength(epc) {
+    return epc.length === 24;
+}
+
+function trackConfirmation(epc) {
+    const now = Date.now();
+    const bucket = confirmationCounts.get(epc) || [];
+    const recent = bucket.filter(ts => now - ts <= confirmWindowMs);
+    recent.push(now);
+    confirmationCounts.set(epc, recent);
+    return recent.length;
 }
 
 function setStatus(text, level) {
@@ -174,13 +194,28 @@ function applyExisting(tag) {
     existingLink.href = `/tags/${encodeURIComponent(tag.epc)}`;
     existingLink.style.display = "inline-flex";
     enrollSubmit.disabled = true;
+    scanLockUntil = Date.now() + 4000;
     if (tag.alias_group) aliasGroup.value = tag.alias_group;
     if (tag.alias) aliasInput.value = tag.alias;
     if (tag.room_number) roomNumber.value = tag.room_number;
     if (tag.notes) notesField.value = tag.notes;
 }
 
+let checkInFlight = false;
+let lastCheckEpc = "";
+let lastCheckAt = 0;
+
 async function checkExisting(epc) {
+    const now = Date.now();
+    if (checkInFlight && epc === lastCheckEpc) {
+        return;
+    }
+    if (epc === lastCheckEpc && now - lastCheckAt < 1500) {
+        return;
+    }
+    lastCheckEpc = epc;
+    lastCheckAt = now;
+    checkInFlight = true;
     try {
         const res = await fetch(`/api/v1/tags/${encodeURIComponent(epc)}`);
         if (res.ok) {
@@ -197,8 +232,11 @@ async function checkExisting(epc) {
         setStatus("Nie mozna sprawdzic tagu", "warn");
         enrollSubmit.disabled = false;
     } catch (err) {
+        // transient errors: do not spam
         setStatus("Brak polaczenia z API", "warn");
         enrollSubmit.disabled = false;
+    } finally {
+        checkInFlight = false;
     }
 }
 
@@ -209,16 +247,37 @@ function handleScan(raw) {
         return;
     }
     const now = Date.now();
-    if (epc === lastEpc && now - lastSeenAt < 500) {
+    if (now < coolDownUntil || now < scanLockUntil) {
         return;
     }
+
+    if (!isValidEpcLength(epc)) {
+        setStatus("EPC ma nieprawidlowa dlugosc", "warn");
+        scanInput.value = "";
+        scanInput.focus();
+        return;
+    }
+
+    // Czyść pole od razu, żeby skany nie doklejały się w nieskończoność
+    scanInput.value = "";
+    scanInput.focus();
+
+    if (epc === lastEpc && now - lastSeenAt < duplicateWindowMs) {
+        return;
+    }
+
+    const confirmations = trackConfirmation(epc);
+    if (confirmations < confirmRequired) {
+        setStatus(`Potwierdzenia: ${confirmations}/${confirmRequired}`, "pending");
+        return;
+    }
+
     lastEpc = epc;
     lastSeenAt = now;
+    coolDownUntil = now + 1500;
     epcHidden.value = epc;
     epcDisplay.value = epc;
     checkExisting(epc);
-    scanInput.value = "";
-    scanInput.focus();
 }
 
 function scheduleScan() {
@@ -226,14 +285,45 @@ function scheduleScan() {
     scanTimer = window.setTimeout(() => handleScan(scanInput.value), 140);
 }
 
-scanInput?.addEventListener("input", scheduleScan);
+scanInput?.addEventListener("input", () => {
+    if (!scanInput) return;
+    if (scanInput.value.length > 64) {
+        scanInput.value = scanInput.value.slice(-64);
+    }
+    if (!useEnterOnly) {
+        scheduleScan();
+    }
+});
 scanInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
         event.preventDefault();
         handleScan(scanInput.value);
     }
 });
-scanInput?.focus();
+
+// Utrzymuj focus na polu skanu (keyboard wedge)
+function ensureScanFocus() {
+    if (!scanInput) return;
+    if (document.activeElement !== scanInput) {
+        scanInput.focus();
+    }
+}
+
+document.addEventListener("keydown", (event) => {
+    // Jeśli focus jest gdzie indziej, przekieruj do pola skanu
+    if (!scanInput) return;
+    if (document.activeElement !== scanInput && !(event.ctrlKey || event.metaKey || event.altKey)) {
+        scanInput.focus();
+    }
+});
+
+scanInput?.addEventListener("blur", () => {
+    setTimeout(ensureScanFocus, 50);
+});
+
+window.addEventListener("focus", ensureScanFocus);
+setInterval(ensureScanFocus, 1000);
+ensureScanFocus();
 
 document.getElementById("enroll-form")?.addEventListener("submit", (event) => {
     if (!epcHidden.value) {

@@ -18,13 +18,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="nixstrav-mng", version="0.1.0")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.session_secret,
-    session_cookie=settings.security.session_cookie,
-    same_site=settings.security.session_samesite,
-    https_only=settings.security.session_secure,
-)
+# Order matters (tests expect TrustedHost -> CORS -> Session -> BaseHTTPMiddleware)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # LAN-only, but keep a minimal CORS safe baseline
 app.add_middleware(
@@ -34,7 +29,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret,
+    session_cookie=settings.security.session_cookie,
+    same_site=settings.security.session_samesite,
+    https_only=settings.security.session_secure,
+)
 
 static_dir = Path(__file__).parent / "static"
 templates_dir = Path(__file__).parent / "templates"
@@ -61,7 +63,6 @@ def on_startup() -> None:
         session.close()
 
 
-@app.middleware("http")
 async def add_csrf_token(request: Request, call_next):
     # Ensure csrf token exists for templates
     if not request.session.get("csrf_token"):
@@ -71,6 +72,16 @@ async def add_csrf_token(request: Request, call_next):
     response = await call_next(request)
     return response
 
+
+# Keep this last (tests expect BaseHTTPMiddleware at the end)
+from starlette.middleware.base import BaseHTTPMiddleware
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=add_csrf_token)
+
+# Starlette stores middleware in reverse order of execution.
+# Tests (and readability) expect: TrustedHost -> CORS -> Session -> BaseHTTPMiddleware
+app.user_middleware = list(reversed(app.user_middleware))
+app.middleware_stack = app.build_middleware_stack()
 
 app.include_router(views.router)
 app.include_router(api.api_router, prefix="/api/v1")

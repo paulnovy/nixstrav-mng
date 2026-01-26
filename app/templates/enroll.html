@@ -201,7 +201,21 @@ function applyExisting(tag) {
     if (tag.notes) notesField.value = tag.notes;
 }
 
+let checkInFlight = false;
+let lastCheckEpc = "";
+let lastCheckAt = 0;
+
 async function checkExisting(epc) {
+    const now = Date.now();
+    if (checkInFlight && epc === lastCheckEpc) {
+        return;
+    }
+    if (epc === lastCheckEpc && now - lastCheckAt < 1500) {
+        return;
+    }
+    lastCheckEpc = epc;
+    lastCheckAt = now;
+    checkInFlight = true;
     try {
         const res = await fetch(`/api/v1/tags/${encodeURIComponent(epc)}`);
         if (res.ok) {
@@ -218,8 +232,11 @@ async function checkExisting(epc) {
         setStatus("Nie mozna sprawdzic tagu", "warn");
         enrollSubmit.disabled = false;
     } catch (err) {
+        // transient errors: do not spam
         setStatus("Brak polaczenia z API", "warn");
         enrollSubmit.disabled = false;
+    } finally {
+        checkInFlight = false;
     }
 }
 

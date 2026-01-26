@@ -40,9 +40,13 @@
     </main>
     <script>
         const root = document.documentElement;
+        const body = document.body;
         const toggle = document.getElementById('theme-toggle');
         const stored = localStorage.getItem('theme');
-        if (stored) root.dataset.theme = stored;
+        if (stored) {
+            root.dataset.theme = stored;
+            body.dataset.theme = stored;
+        }
         function setIcon() {
             const theme = root.dataset.theme || 'dark';
             toggle.textContent = theme === 'light' ? '☾' : '☀︎';
@@ -51,6 +55,7 @@
             const current = root.dataset.theme || 'dark';
             const next = current === 'light' ? 'dark' : 'light';
             root.dataset.theme = next;
+            body.dataset.theme = next;
             localStorage.setItem('theme', next);
             setIcon();
         });

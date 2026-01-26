@@ -233,8 +233,14 @@ function handleScan(raw) {
 
     if (!isValidEpcLength(epc)) {
         setStatus("EPC ma nieprawidlowa dlugosc", "warn");
+        scanInput.value = "";
+        scanInput.focus();
         return;
     }
+
+    // Czyść pole od razu, żeby skany nie doklejały się w nieskończoność
+    scanInput.value = "";
+    scanInput.focus();
 
     if (epc === lastEpc && now - lastSeenAt < duplicateWindowMs) {
         return;
@@ -252,8 +258,6 @@ function handleScan(raw) {
     epcHidden.value = epc;
     epcDisplay.value = epc;
     checkExisting(epc);
-    scanInput.value = "";
-    scanInput.focus();
 }
 
 function scheduleScan() {

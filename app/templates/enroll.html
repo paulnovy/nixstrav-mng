@@ -146,6 +146,8 @@ let coolDownUntil = 0;
 const confirmWindowMs = 3000;
 const confirmRequired = 3;
 const confirmationCounts = new Map();
+let scanLockUntil = 0;
+const useEnterOnly = true; // keyboard-wedge: reaguj tylko na Enter
 
 function normalizeEpc(raw) {
     const trimmed = (raw || "").trim();
@@ -192,6 +194,7 @@ function applyExisting(tag) {
     existingLink.href = `/tags/${encodeURIComponent(tag.epc)}`;
     existingLink.style.display = "inline-flex";
     enrollSubmit.disabled = true;
+    scanLockUntil = Date.now() + 4000;
     if (tag.alias_group) aliasGroup.value = tag.alias_group;
     if (tag.alias) aliasInput.value = tag.alias;
     if (tag.room_number) roomNumber.value = tag.room_number;
@@ -227,7 +230,7 @@ function handleScan(raw) {
         return;
     }
     const now = Date.now();
-    if (now < coolDownUntil) {
+    if (now < coolDownUntil || now < scanLockUntil) {
         return;
     }
 
@@ -265,7 +268,15 @@ function scheduleScan() {
     scanTimer = window.setTimeout(() => handleScan(scanInput.value), 140);
 }
 
-scanInput?.addEventListener("input", scheduleScan);
+scanInput?.addEventListener("input", () => {
+    if (!scanInput) return;
+    if (scanInput.value.length > 64) {
+        scanInput.value = scanInput.value.slice(-64);
+    }
+    if (!useEnterOnly) {
+        scheduleScan();
+    }
+});
 scanInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
         event.preventDefault();

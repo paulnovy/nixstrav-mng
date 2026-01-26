@@ -23,6 +23,7 @@
             {% endif %}
         </nav>
         <div class="userbox">
+            <button class="theme-toggle" id="theme-toggle" type="button" title="Przełącz motyw">☀︎</button>
             {% if user %}
                 <span class="user-role">{{ user.role }}</span>
                 <form method="post" action="/logout" style="display:inline;">
@@ -37,5 +38,23 @@
     <main class="content">
         {% block content %}{% endblock %}
     </main>
+    <script>
+        const root = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const stored = localStorage.getItem('theme');
+        if (stored) root.dataset.theme = stored;
+        function setIcon() {
+            const theme = root.dataset.theme || 'dark';
+            toggle.textContent = theme === 'light' ? '☾' : '☀︎';
+        }
+        toggle?.addEventListener('click', () => {
+            const current = root.dataset.theme || 'dark';
+            const next = current === 'light' ? 'dark' : 'light';
+            root.dataset.theme = next;
+            localStorage.setItem('theme', next);
+            setIcon();
+        });
+        setIcon();
+    </script>
 </body>
 </html>

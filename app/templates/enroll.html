@@ -20,27 +20,27 @@
             </div>
             <p class="muted">Skanuj EPC w pole ponizej. Brak dodatkowego oprogramowania.</p>
         </div>
+        {% if cf601_mode == 'service' %}
         <div class="mode-item">
-            <div class="mode-name">Tryb B: lokalny agent cf601d</div>
+            <div class="mode-name">Tryb B: lokalny agent (awaryjny)</div>
             <div class="mode-meta">
-                <span class="mode-pill {% if cf601_mode == 'service' %}active{% endif %}">
-                    {% if cf601_mode == 'service' %}aktywny{% else %}opcjonalny{% endif %}
-                </span>
+                <span class="mode-pill active">aktywny</span>
                 <span class="mode-pill">localhost</span>
             </div>
-            <p class="muted">Przegladarka laczy sie bezposrednio do cf601d na komputerze operatora.</p>
+            <p class="muted">Przegladarka laczy sie do lokalnego bridge na komputerze operatora.</p>
         </div>
+        {% endif %}
+        {% if cf601_mode == 'webserial' %}
         <div class="mode-item">
             <div class="mode-name">Tryb C: Web Serial / WebUSB</div>
             <div class="mode-meta">
-                <span class="mode-pill {% if cf601_mode == 'webserial' %}active{% endif %}">
-                    {% if cf601_mode == 'webserial' %}aktywny{% else %}opcjonalny{% endif %}
-                </span>
+                <span class="mode-pill active">aktywny</span>
                 <span class="mode-pill" id="serial-support">WebSerial: ?</span>
                 <span class="mode-pill" id="usb-support">WebUSB: ?</span>
             </div>
             <p class="muted">Eksperymentalny tryb. Wymaga HTTPS/localhost i zgodnej przegladarki.</p>
         </div>
+        {% endif %}
     </div>
     <div id="compat-warnings" class="alert alert-warn" style="display:none;"></div>
 </div>

@@ -1,7 +1,7 @@
 # Operations
 
-## Reader Bridge (Windows)
-Operatorzy na Windows muszą uruchomić lokalny bridge HTTP, bo USB jest lokalne i przeglądarka nie ma dostępu do urządzenia.
+## Reader Bridge (Windows) — tryb awaryjny
+**Domyślnie używamy keyboard‑wedge (HID)**, bez instalacji. Bridge jest potrzebny tylko gdy czytnik nie potrafi emulować klawiatury.
 
 ### Instalacja (nietechniczna)
 1. Skopiuj folder `tools/reader-bridge` na komputer operatora.

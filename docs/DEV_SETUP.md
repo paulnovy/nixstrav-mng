@@ -12,6 +12,5 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## Reader Bridge (Windows)
-Jeśli testujesz enrollment z czytnikiem USB, potrzebujesz lokalnego bridge na komputerze operatora.
-Instrukcja: `tools/reader-bridge/README.md`.
+## Reader Bridge (Windows) — awaryjnie
+Jeśli keyboard‑wedge nie działa, użyj lokalnego bridge: `tools/reader-bridge/README.md`.

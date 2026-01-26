@@ -4,6 +4,8 @@
 - Repo root: /workspace/nixstrav-mng (contains .git). There is also /workspace as a parent.
 - Stack: FastAPI + Jinja, SQLite; no external assets.
 - Enrollment UI at /enroll uses keyboard wedge by default; bridge/WebSerial are hidden unless enabled.
+- EPC accepted after 3 confirmations in 3s, length must be 24 hex.
+- Keyboard‑wedge is Enter‑only and forces focus to scan field.
 - Added Windows reader bridge under tools/reader-bridge (bridge.py + install.bat/run.bat) as emergency option.
 - known_tags.json sync uses atomic write + .lock.
 - events.db is accessed read-only via sqlite mode=ro.

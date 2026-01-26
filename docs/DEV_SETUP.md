@@ -15,3 +15,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## Reader Bridge (Windows) — awaryjnie
 Jeśli keyboard‑wedge nie działa, użyj lokalnego bridge: `tools/reader-bridge/README.md`.
+
+## EPC validation
+- EPC musi mieć 24 znaki hex (zgodne z nixstrav).
+- UI wymaga 3 potwierdzeń w 3s.

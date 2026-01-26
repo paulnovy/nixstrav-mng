@@ -6,7 +6,8 @@ nixstrav-mng to webapka do zarzadzania systemem nixstrav. Dostep tylko w LAN na 
 ## Krytyczne prawdy
 - CF601 USB jest po stronie operatora. Serwer nie ma dostepu do USB operatora.
 - Enrollment musi dzialac z przegladarki na dowolnym PC w LAN.
-- Mode A (keyboard-wedge) jest domyslny i zawsze dziala.
+- Mode A (keyboard‑wedge) jest domyslny i zawsze dziala.
+- EPC musi miec 24 znaki hex; akceptujemy po 3 potwierdzeniach w 3s.
 - WebSerial/WebUSB to opcja. Wymagaja HTTPS (secure context) i maja ograniczone wsparcie.
 - Dev env na Ubuntu 24.04 ma PEP 668. Uzywamy venv lub kontenerowego venv.
 - Testy uruchamiamy z root repo. pytest.ini ogranicza testpaths do tests.

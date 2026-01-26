@@ -7,3 +7,7 @@ venv/
 .venv/
 .env.local
 __pypackages__/
+.pytest_cache/
+data/
+*.log
+.DS_Store
